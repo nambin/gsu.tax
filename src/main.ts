@@ -130,20 +130,13 @@ dropZone.addEventListener('click', () => {
   fileInput.click();
 });
 
-// Use a counter to prevent dragleave from firing when moving over child elements
-let dragCounter = 0;
-
 dropZone.addEventListener('dragenter', (e) => {
   e.preventDefault();
-  dragCounter++;
   dropZone.classList.add('dragover');
 });
 
 dropZone.addEventListener('dragleave', () => {
-  dragCounter--;
-  if (dragCounter === 0) {
-    dropZone.classList.remove('dragover');
-  }
+  dropZone.classList.remove('dragover');
 });
 
 dropZone.addEventListener('dragover', (e) => {
@@ -152,7 +145,6 @@ dropZone.addEventListener('dragover', (e) => {
 
 dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
-  dragCounter = 0;
   dropZone.classList.remove('dragover');
   if (e.dataTransfer && e.dataTransfer.files) {
     handleFiles(e.dataTransfer.files);
