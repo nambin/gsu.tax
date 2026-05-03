@@ -69,6 +69,7 @@ describe('Calculator and Math Requirements', () => {
         // Case 3: different transferDate (2024-09-22, will sort last)
         filename: 'sep.mhtml',
         disbursementDate: '2024-09-22',
+        settlementDate: '',
         transactions: [
           { acquisitionDate: '2024-06-01', typeOfMoney: '', costBasisPerShareUsd: 8, marketValuePerShareUsd: 10, shares: 1, gainOrLossUsd: 2 },
         ]
@@ -76,6 +77,7 @@ describe('Calculator and Math Requirements', () => {
       {
         filename: 'aug.mhtml',
         disbursementDate: '2024-08-22',
+        settlementDate: '',
         transactions: [
           // Case 1: same transferDate, later acquisitionDate (will sort after 2024-05-01 rows)
           { acquisitionDate: '2024-06-01', typeOfMoney: '', costBasisPerShareUsd: 8, marketValuePerShareUsd: 10, shares: 2, gainOrLossUsd: 4 },
@@ -109,6 +111,7 @@ describe('Calculator and Math Requirements', () => {
       {
         filename: 'test.mhtml',
         disbursementDate: '2024-08-22',
+        settlementDate: '',
         transactions: [
           {
             acquisitionDate: '2024-06-25',
@@ -123,6 +126,8 @@ describe('Calculator and Math Requirements', () => {
     ];
 
     const results = processTransactions(mhtmlList, rates);
+    expect(results.length).toBe(1);
+
     // Transfer Rate = 1330.5, Price = 130.21
     // Per share won = floor(1330.5 * 130.21) = floor(173244.405) = 173244
     // Total transfer won = floor(1.50 * 173244) = floor(259866.0) = 259866
@@ -144,5 +149,69 @@ describe('Calculator and Math Requirements', () => {
       k_acquisitionPriceTotalWon: 207256,
       l_gainLossWon: 52610,
     });
+  });
+
+  it('should fallback to Settlement date when Disbursement date is missing', () => {
+    const rates: ExchangeRate[] = [
+      { date: '2024-08-22', rate: 1330.5 },
+      { date: '2024-05-21', rate: 1300.1 },
+    ];
+
+    const mhtmlList: MhtmlData[] = [
+      {
+        filename: 'fallback.mhtml',
+        disbursementDate: '', // missing
+        settlementDate: '2024-08-22',
+        transactions: [
+          {
+            acquisitionDate: '2024-05-21',
+            typeOfMoney: '',
+            costBasisPerShareUsd: 100,
+            marketValuePerShareUsd: 110,
+            shares: 10,
+            gainOrLossUsd: 100
+          }
+        ]
+      }
+    ];
+
+    const results = processTransactions(mhtmlList, rates);
+    expect(results.length).toBe(1);
+    expect(results[0]).toEqual({
+      a_numberOfStocks: 10,
+      b_transferDate: '2024-08-22',
+      c_exchangeRateOnTransferDate: 1330.5,
+      d_transferPriceUsd: 110,
+      e_transferPriceWon: 146355,
+      f_transferPriceTotalWon: 1463550,
+      g_acquisitionDate: '2024-05-21',
+      h_exchangeRateOnAcquisitionDate: 1300.1,
+      i_acquisitionPriceUsd: 100,
+      j_acquisitionPriceWon: 130009,
+      k_acquisitionPriceTotalWon: 1300090,
+      l_gainLossWon: 163460,
+    });
+  });
+
+  it('should throw error if both Disbursement and Settlement dates are missing', () => {
+    const rates: ExchangeRate[] = [{ date: '2024-01-01', rate: 1000 }];
+    const mhtmlList: MhtmlData[] = [
+      {
+        filename: 'error.mhtml',
+        disbursementDate: '',
+        settlementDate: '',
+        transactions: [
+          {
+            acquisitionDate: '2024-05-21',
+            typeOfMoney: '',
+            costBasisPerShareUsd: 100,
+            marketValuePerShareUsd: 110,
+            shares: 10,
+            gainOrLossUsd: 100
+          }
+        ]
+      }
+    ];
+    expect(() => processTransactions(mhtmlList, rates)).toThrow(/Both Disbursement date and Settlement date are missing/);
   });
 });

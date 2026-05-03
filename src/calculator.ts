@@ -82,7 +82,10 @@ export function processTransactions(
   const result: ProcessedTransaction[] = [];
 
   for (const mhtmlData of mhtmlDataList) {
-    const transferDate = mhtmlData.disbursementDate;
+    const transferDate = mhtmlData.disbursementDate || mhtmlData.settlementDate;
+    if (!transferDate) {
+      throw new Error(`[${mhtmlData.filename}] Both Disbursement date and Settlement date are missing`);
+    }
     const exchangeRateOnTransferDate = getExchangeRate(exchangeRates, transferDate);
 
     for (const t of mhtmlData.transactions) {

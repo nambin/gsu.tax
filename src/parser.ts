@@ -71,25 +71,34 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
   const parser = new DOMParser();
   const doc = parser.parseFromString(decodedHtml, 'text/html');
 
-  // Extract Disbursement Date
-  // It is usually in a div containing <span>Disbursement date</span>, next div has the content
+  // Extract Disbursement Date and Settlement Date
+  // They are usually in a div containing <span>Disbursement date</span> or <span>Settlement date</span>, next div has the content
   let disbursementDateRaw = '';
+  let settlementDateRaw = '';
   const titles = doc.querySelectorAll('div[aria-label="title"]');
   for (let i = 0; i < titles.length; i++) {
-    if (titles[i].textContent?.includes('Disbursement date')) {
+    const titleText = titles[i].textContent || '';
+    if (titleText.includes('Disbursement date')) {
       const parent = titles[i].parentElement;
       const contentDiv = parent?.querySelector('div[aria-label="content"]');
       if (contentDiv && contentDiv.textContent) {
         disbursementDateRaw = contentDiv.textContent.trim();
-        break;
+      }
+    } else if (titleText.includes('Settlement date')) {
+      const parent = titles[i].parentElement;
+      const contentDiv = parent?.querySelector('div[aria-label="content"]');
+      if (contentDiv && contentDiv.textContent) {
+        settlementDateRaw = contentDiv.textContent.trim();
       }
     }
   }
 
-  if (!disbursementDateRaw) {
-    throw new Error(`[${filename}] Could not find Disbursement date`);
+  if (!disbursementDateRaw && !settlementDateRaw) {
+    throw new Error(`[${filename}] Could not find Disbursement date or Settlement date`);
   }
-  const disbursementDate = formatDate(disbursementDateRaw, filename);
+
+  const disbursementDate = disbursementDateRaw ? formatDate(disbursementDateRaw, filename) : '';
+  const settlementDate = settlementDateRaw ? formatDate(settlementDateRaw, filename) : '';
 
   // Extract Table Transactions
   const transactions: Transaction[] = [];
@@ -171,6 +180,7 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
   return {
     filename,
     disbursementDate,
+    settlementDate,
     transactions
   };
 }

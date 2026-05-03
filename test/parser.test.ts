@@ -7,14 +7,15 @@ describe('Data Extraction Logic', () => {
   it('should correctly parse test-ms-one-record.mhtml', () => {
     const filePath = path.join(__dirname, 'fixtures', 'test-ms-one-record.mhtml');
     const content = fs.readFileSync(filePath, 'utf-8');
-    
+
     const result = parseMhtmlFromMorganStanley(content, 'test-ms-one-record.mhtml');
-    
+
     expect(result.filename).toBe('test-ms-one-record.mhtml');
     expect(result.disbursementDate).toBe('2024-08-22');
-    
+    expect(result.settlementDate).toBe('2024-08-22');
+
     expect(result.transactions.length).toBe(1);
-    
+
     expect(result.transactions[0]).toEqual({
       acquisitionDate: '2024-06-25',
       typeOfMoney: '',
@@ -28,14 +29,15 @@ describe('Data Extraction Logic', () => {
   it('should correctly parse test-ms-four-records.mhtml', () => {
     const filePath = path.join(__dirname, 'fixtures', 'test-ms-four-records.mhtml');
     const content = fs.readFileSync(filePath, 'utf-8');
-    
+
     const result = parseMhtmlFromMorganStanley(content, 'test-ms-four-records.mhtml');
-    
+
     expect(result.filename).toBe('test-ms-four-records.mhtml');
     expect(result.disbursementDate).toBe('2024-09-23');
-    
+    expect(result.settlementDate).toBe('2024-09-23');
+
     expect(result.transactions.length).toBe(4);
-    
+
     expect(result.transactions[0]).toEqual({
       acquisitionDate: "2024-05-25",
       typeOfMoney: "",

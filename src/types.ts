@@ -14,6 +14,8 @@ export interface MhtmlData {
   filename: string;
   /** Format: YYYY-MM-DD. Shared by all Transactions in the file. */
   disbursementDate: string;
+  /** Format: YYYY-MM-DD. Fallback for disbursementDate. */
+  settlementDate: string;
   transactions: Transaction[];
 }
 
