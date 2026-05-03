@@ -94,12 +94,12 @@ export function processTransactions(
       const numberOfStocks = t.shares;
       const transferPriceUsd = t.marketValuePerShareUsd;
       const transferPriceWon = Math.floor(exchangeRateOnTransferDate * transferPriceUsd);
-      const transferPriceTotalWon = Math.floor(numberOfStocks * transferPriceWon);
+      const transferPriceTotalWon = Math.floor(exchangeRateOnTransferDate * transferPriceUsd * numberOfStocks);
 
       const acquisitionDate = t.acquisitionDate;
       const acquisitionPriceUsd = t.costBasisPerShareUsd;
       const acquisitionPriceWon = Math.floor(exchangeRateOnAcquisitionDate * acquisitionPriceUsd);
-      const acquisitionPriceTotalWon = Math.floor(numberOfStocks * acquisitionPriceWon);
+      const acquisitionPriceTotalWon = Math.floor(exchangeRateOnAcquisitionDate * acquisitionPriceUsd * numberOfStocks);
 
       const gainLossWon = transferPriceTotalWon - acquisitionPriceTotalWon;
 

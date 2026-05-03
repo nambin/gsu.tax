@@ -118,7 +118,7 @@ describe('Calculator and Math Requirements', () => {
             typeOfMoney: '',
             costBasisPerShareUsd: 100.11,
             marketValuePerShareUsd: 130.21,
-            shares: 1.50,
+            shares: 100.5,
             gainOrLossUsd: 45.15
           }
         ]
@@ -130,24 +130,24 @@ describe('Calculator and Math Requirements', () => {
 
     // Transfer Rate = 1330.5, Price = 130.21
     // Per share won = floor(1330.5 * 130.21) = floor(173244.405) = 173244
-    // Total transfer won = floor(1.50 * 173244) = floor(259866.0) = 259866
+    // Total transfer won = floor(1330.5 * 130.21 * 100.5) = floor(17411062.7025) = 17411062
     // Acquisition Rate = 1380.2, Price = 100.11
     // Per share won = floor(1380.2 * 100.11) = floor(138171.822) = 138171
-    // Total acq won = floor(1.50 * 138171) = floor(207256.5) = 207256
-    // Gain Loss = 259866 - 207256 = 52610
+    // Total acq won = floor(1380.2 * 100.11 * 100.5) = floor(13886268.111) = 13886268
+    // Gain Loss = 17411062 - 13886268 = 3524794
     expect(results[0]).toEqual({
-      a_numberOfStocks: 1.50,
+      a_numberOfStocks: 100.5,
       b_transferDate: '2024-08-22',
       c_exchangeRateOnTransferDate: 1330.5,
       d_transferPriceUsd: 130.21,
       e_transferPriceWon: 173244,
-      f_transferPriceTotalWon: 259866,
+      f_transferPriceTotalWon: 17411062,
       g_acquisitionDate: '2024-06-25',
       h_exchangeRateOnAcquisitionDate: 1380.2,
       i_acquisitionPriceUsd: 100.11,
       j_acquisitionPriceWon: 138171,
-      k_acquisitionPriceTotalWon: 207256,
-      l_gainLossWon: 52610,
+      k_acquisitionPriceTotalWon: 13886268,
+      l_gainLossWon: 3524794,
     });
   });
 
@@ -168,7 +168,7 @@ describe('Calculator and Math Requirements', () => {
             typeOfMoney: '',
             costBasisPerShareUsd: 100,
             marketValuePerShareUsd: 110,
-            shares: 10,
+            shares: 200.5,
             gainOrLossUsd: 100
           }
         ]
@@ -177,19 +177,26 @@ describe('Calculator and Math Requirements', () => {
 
     const results = processTransactions(mhtmlList, rates);
     expect(results.length).toBe(1);
+    // Transfer Rate = 1330.5, Price = 110
+    // Per share won = floor(1330.5 * 110) = floor(146355) = 146355
+    // Total transfer won = floor(1330.5 * 110 * 200.5) = floor(29344177.5) = 29344177
+    // Acquisition Rate = 1300.1, Price = 100
+    // Per share won = floor(1300.1 * 100) = floor(130009.999...) = 130009  [JS float]
+    // Total acq won = floor(1300.1 * 100 * 200.5) = floor(26067004.999...) = 26067004  [JS float]
+    // Gain Loss = 29344177 - 26067004 = 3277173
     expect(results[0]).toEqual({
-      a_numberOfStocks: 10,
+      a_numberOfStocks: 200.5,
       b_transferDate: '2024-08-22',
       c_exchangeRateOnTransferDate: 1330.5,
       d_transferPriceUsd: 110,
       e_transferPriceWon: 146355,
-      f_transferPriceTotalWon: 1463550,
+      f_transferPriceTotalWon: 29344177,
       g_acquisitionDate: '2024-05-21',
       h_exchangeRateOnAcquisitionDate: 1300.1,
       i_acquisitionPriceUsd: 100,
       j_acquisitionPriceWon: 130009,
-      k_acquisitionPriceTotalWon: 1300090,
-      l_gainLossWon: 163460,
+      k_acquisitionPriceTotalWon: 26067004,
+      l_gainLossWon: 3277173,
     });
   });
 

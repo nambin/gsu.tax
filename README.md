@@ -11,7 +11,7 @@ This tool parses exported MHTML files from Morgan Stanley and calculates the rel
 
 ## Key Features
 
-- **MHTML Parsing:** Automatically extracts transaction data (acquisition dates, cost basis, shares, etc.) from Morgan Stanley's complex MHTML report format.
+- **MHTML Parsing:** Automatically extracts transaction data (acquisition dates, cost basis, shares, etc.) from Morgan Stanley's MHTML report format.
 - **Exchange Rate Integration:** Uses pre-loaded historical KRW-USD exchange rates to calculate accurate gains in local currency. The CSV file was downloaded from https://ecos.bok.or.kr/#/SearchStat.
 - **Bulk Processing:** Support for processing up to 150 MHTML files simultaneously.
 - **CSV Export:** Generates two types of reports:
@@ -23,8 +23,8 @@ This tool parses exported MHTML files from Morgan Stanley and calculates the rel
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) (v18 or later recommended)
-- [npm](https://www.npmjs.com/)
+- [Node.js](https://nodejs.org/) (v18 or later recommended, for local development only)
+- [npm](https://www.npmjs.com/) (for local development only)
 
 ### Installation
 
