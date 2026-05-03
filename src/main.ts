@@ -7,7 +7,17 @@ import { ExchangeRate, MhtmlData, ProcessedTransaction } from './types';
 let exchangeRates: ExchangeRate[] = [];
 let parsedMhtmlList: MhtmlData[] = [];
 let finalTransactions: ProcessedTransaction[] = [];
-let hasError = false;
+
+// initFailed: set to true in init() if the bundled exchange rate CSV fails to parse.
+//   - Cannot be reset without a full page reload; the drop zone is permanently disabled.
+//   - Prevents any upload attempt from proceeding.
+//
+// uploadHasError: set to true during handleFiles() when any individual file fails to parse,
+//   the file count exceeds 150, or processTransactions() throws an error.
+//   - Reset to false at the start of every new upload via resetState(), so the user can
+//     correct their files and try again without reloading the page.
+let initFailed = false;
+let uploadHasError = false;
 
 const dropZone = document.getElementById('drop-zone') as HTMLDivElement;
 const fileInput = document.getElementById('file-input') as HTMLInputElement;
@@ -15,6 +25,7 @@ const logContainer = document.getElementById('log-container') as HTMLDivElement;
 const btnFull = document.getElementById('download-full-btn') as HTMLButtonElement;
 const btnTax = document.getElementById('download-tax-btn') as HTMLButtonElement;
 
+/** Appends a styled message entry to the log panel. */
 function logMessage(msg: string, type: 'info' | 'success' | 'error' = 'info') {
   const el = document.createElement('div');
   el.className = `log-entry log-${type}`;
@@ -23,14 +34,19 @@ function logMessage(msg: string, type: 'info' | 'success' | 'error' = 'info') {
   logContainer.scrollTop = logContainer.scrollHeight;
 }
 
+/** Clears all existing log entries from the log panel. Called at the start of handleFiles()
+ *  so each upload session begins with a clean, uncluttered log. */
 function clearLogs() {
   logContainer.innerHTML = '';
 }
 
+/** Resets all upload-related state in preparation for a new upload session.
+ *  Called at the start of handleFiles() on every new file selection.
+ *  Does NOT reset initFailed — an exchange rate load failure requires a page reload. */
 function resetState() {
   parsedMhtmlList = [];
   finalTransactions = [];
-  hasError = false;
+  uploadHasError = false;
   btnFull.disabled = true;
   btnTax.disabled = true;
 }
@@ -39,17 +55,28 @@ async function init() {
   try {
     logMessage('Loading exchange rates...', 'info');
     exchangeRates = parseExchangeRates(exchangeRateCsvStr);
-    logMessage(`Loaded ${exchangeRates.length} exchange rate records.`, 'success');
+    const earliest = exchangeRates[exchangeRates.length - 1].date;
+    const latest = exchangeRates[0].date;
+    logMessage(`Loaded ${exchangeRates.length} exchange rate records (${earliest} to ${latest}).`, 'success');
   } catch (err: any) {
     logMessage(`Failed to load exchange rates: ${err.message}`, 'error');
-    hasError = true;
+    logMessage('The application cannot function. Please reload the page.', 'error');
+    initFailed = true;
+    // Visually disable the drop zone so the user knows uploading is blocked
+    dropZone.style.opacity = '0.4';
+    dropZone.style.pointerEvents = 'none';
   }
 }
 
 async function handleFiles(files: FileList | null) {
-  if (!files || files.length === 0) return;
-  if (hasError && exchangeRates.length === 0) {
-    logMessage('Cannot process files without exchange rates.', 'error');
+  if (initFailed) {
+    logMessage('Cannot process files: exchange rates failed to load. Please reload the page.', 'error');
+    return;
+  }
+
+  // Idea #5: show a message when user cancels the file picker
+  if (!files || files.length === 0) {
+    logMessage('No files selected.', 'info');
     return;
   }
 
@@ -59,11 +86,11 @@ async function handleFiles(files: FileList | null) {
   if (files.length > 150) {
     logMessage(`Error: You uploaded ${files.length} files. Maximum allowed is 150.`, 'error');
     logMessage('Please reduce the number of files and try again.', 'info');
-    hasError = true;
+    uploadHasError = true;
     return;
   }
 
-  logMessage(`Processing ${files.length} files...`, 'info');
+  logMessage(`Processing ${files.length} file(s)...`, 'info');
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
@@ -74,24 +101,27 @@ async function handleFiles(files: FileList | null) {
       logMessage(`[${file.name}] - ${parsed.transactions.length} transactions found`, 'success');
     } catch (err: any) {
       logMessage(`Error processing ${file.name}: ${err.message}`, 'error');
-      hasError = true;
+      uploadHasError = true;
       break;
     }
   }
 
-  if (hasError) {
+  if (uploadHasError) {
     logMessage('Processing stopped due to errors. Please fix the errors and try again.', 'error');
     return;
   }
 
   try {
     finalTransactions = processTransactions(parsedMhtmlList, exchangeRates);
-    logMessage(`Successfully processed all files. Ready to download CSV.`, 'success');
+    // Log total transaction count summary.
+    const totalTransactions = finalTransactions.length;
+    const totalFiles = parsedMhtmlList.length;
+    logMessage(`Successfully processed ${totalFiles} file(s) with ${totalTransactions} total transactions. Ready to download CSV.`, 'success');
     btnFull.disabled = false;
     btnTax.disabled = false;
   } catch (err: any) {
     logMessage(`Error calculating values: ${err.message}`, 'error');
-    hasError = true;
+    uploadHasError = true;
   }
 }
 
@@ -100,17 +130,29 @@ dropZone.addEventListener('click', () => {
   fileInput.click();
 });
 
-dropZone.addEventListener('dragover', (e) => {
+// Use a counter to prevent dragleave from firing when moving over child elements
+let dragCounter = 0;
+
+dropZone.addEventListener('dragenter', (e) => {
   e.preventDefault();
+  dragCounter++;
   dropZone.classList.add('dragover');
 });
 
 dropZone.addEventListener('dragleave', () => {
-  dropZone.classList.remove('dragover');
+  dragCounter--;
+  if (dragCounter === 0) {
+    dropZone.classList.remove('dragover');
+  }
+});
+
+dropZone.addEventListener('dragover', (e) => {
+  e.preventDefault();
 });
 
 dropZone.addEventListener('drop', (e) => {
   e.preventDefault();
+  dragCounter = 0;
   dropZone.classList.remove('dragover');
   if (e.dataTransfer && e.dataTransfer.files) {
     handleFiles(e.dataTransfer.files);
@@ -119,9 +161,7 @@ dropZone.addEventListener('drop', (e) => {
 
 fileInput.addEventListener('change', async (e) => {
   const target = e.target as HTMLInputElement;
-  if (target.files) {
-    await handleFiles(target.files);
-  }
+  await handleFiles(target.files);
   // Reset input so the same files can be selected again
   target.value = '';
 });
@@ -139,13 +179,13 @@ function download(filename: string, text: string) {
 }
 
 btnFull.addEventListener('click', () => {
-  if (hasError || finalTransactions.length === 0) return;
+  if (uploadHasError || finalTransactions.length === 0) return;
   const csv = generateFullCsv(finalTransactions);
   download('gsu_tax_full_verification.csv', csv);
 });
 
 btnTax.addEventListener('click', () => {
-  if (hasError || finalTransactions.length === 0) return;
+  if (uploadHasError || finalTransactions.length === 0) return;
   const csv = generateTaxCsv(finalTransactions);
   download('gsu_tax_korean_filing.csv', csv);
 });
