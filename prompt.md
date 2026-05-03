@@ -7,9 +7,8 @@
 **1. Zero-Server Architecture & Tech Stack:**
 
 * All processing must happen in the browser for privacy. No data should be sent to any external server.
-* Do not use any extra dependencies such as Ruby or Jekyll.
-* Use React, TypeScript, and Vite for the build setup.
-* **Simple User Interface:** We don’t need any fancy UI styling or animation. Please minimize the CSS decorations as much as possible.
+* Do not use any other extra dependencies such as Ruby or Jekyll or Node.JS. Using plain HTML/CSS/TypeScript is most desirable. But, You may use standard NPM packages for MIME/Quoted-Printable decoding and CSV operations.
+* **Simple User Interface:** We don’t need any fancy UI styling or 1nimation. Please minimize the CSS decorations as much as possible.
 
 **2. Input Handling & MHTML Decoding:**
 
@@ -42,13 +41,13 @@
 * b) “Transfer Date” (Korean: 양도일자) - Disbursement date.
 * c) “Exchange Rate on Transfer Date” - USD to Won exchange rate on Disbursement date.
 * d) “Transfer Price (USD)” - Market value per share in USD.
-* e) “Transfer Price (Won)” (Korean: 주당양도가액) - Market value per share in Won. Multiplication of columns c and d.
-* f) “Transfer Price Total (Won)” (Korean: 양도가액) - Market value in Won. Multiplication of columns a and e.
+* e) “Transfer Price (Won)” (Korean: 주당양도가액) - Market value per share in Won. Multiplication of columns c and d. Round down to the integer.
+* f) “Transfer Price Total (Won)” (Korean: 양도가액) - Market value in Won. Multiplication of columns a and e. Round down to the integer.
 * g) “Acquisition Date” (Korean: 취득일자) - Acquisition Date.
 * h) “Exchange Rate on Acquisition Date” - USD to Won exchange rate on Acquisition Date.
 * i) “Acquisition Price (USD)” - Cost basis per share in USD.
-* j) “Acquisition Price (Won)” (Korean: 주당취득가액) - Cost basis per share in Won. Multiplication of columns h and i.
-* k) “Acquisition Price Total (Won)” (Korean: 취득가액) - Cost basis in Won. Multiplication of columns a and j.
+* j) “Acquisition Price (Won)” (Korean: 주당취득가액) - Cost basis per share in Won. Multiplication of columns h and i. Round down to the integer.
+* k) “Acquisition Price Total (Won)” (Korean: 취득가액) - Cost basis in Won. Multiplication of columns a and j. Round down to the integer.
 * l) “Gain/Loss (Won)” - Column f minus Column k.
 
 **6. Unit Tests:**
