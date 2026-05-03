@@ -1,6 +1,6 @@
 # GSU Tax Calculator
 
-A zero-dependency, browser-based tool for processing Morgan Stanley MHTML reports to simplify tax filing for GSU (Global Stock Units) and other stock programs.
+A zero-dependency, browser-based tool for processing Morgan Stanley MHTML reports to simplify tax filing for Alphabet GSU (Global Stock Units). This is written for Google employees in South Korea.
 
 ## Overview
 
@@ -12,7 +12,7 @@ This tool parses exported MHTML files from Morgan Stanley and calculates the rel
 ## Key Features
 
 - **MHTML Parsing:** Automatically extracts transaction data (acquisition dates, cost basis, shares, etc.) from Morgan Stanley's complex MHTML report format.
-- **Exchange Rate Integration:** Uses pre-loaded historical KRW-USD exchange rates (BOK) to calculate accurate gains in local currency.
+- **Exchange Rate Integration:** Uses pre-loaded historical KRW-USD exchange rates to calculate accurate gains in local currency. The CSV file was downloaded from https://ecos.bok.or.kr/#/SearchStat.
 - **Bulk Processing:** Support for processing up to 150 MHTML files simultaneously.
 - **CSV Export:** Generates two types of reports:
     - **Full Verification:** Detailed row-by-row breakdown for internal audit.
