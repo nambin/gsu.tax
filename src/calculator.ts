@@ -35,17 +35,23 @@ export function parseExchangeRates(csvContent: string): ExchangeRate[] {
     let dateStr = row[dateCol];
     let rateStr = row[rateCol];
 
-    if (!dateStr || !rateStr) continue;
+    if (!dateStr || !rateStr) {
+      throw new Error(`Exchange rate CSV has a row with missing date or rate value`);
+    }
 
     // Parse YYYY/MM/DD format and convert to YYYY-MM-DD
     const dateParts = dateStr.split('/');
-    if (dateParts.length !== 3) continue;
+    if (dateParts.length !== 3) {
+      throw new Error(`Exchange rate CSV has malformed date: ${dateStr}`);
+    }
 
     const year = dateParts[0].trim();
     const month = dateParts[1].trim().padStart(2, '0');
     const dayOfMonth = dateParts[2].trim().padStart(2, '0');
 
-    if (year.length !== 4) continue;
+    if (year.length !== 4) {
+      throw new Error(`Exchange rate CSV has malformed year in date: ${dateStr}`);
+    }
     const formattedDate = `${year}-${month}-${dayOfMonth}`;
 
     const rate = parseFloat(rateStr.replace(/[^\d.]/g, ''));

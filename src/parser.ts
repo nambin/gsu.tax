@@ -31,6 +31,18 @@ function parseCurrencyUsd(val: string, filename: string): number {
   return num;
 }
 
+// Helper to parse and validate shares value — must be a positive number
+export function parseSharesValue(val: string, filename: string): number {
+  const num = parseFloat(val);
+  if (isNaN(num)) {
+    throw new Error(`[${filename}] Invalid shares value (non-numeric): ${val}`);
+  }
+  if (num <= 0) {
+    throw new Error(`[${filename}] Invalid shares value (must be positive): ${val}`);
+  }
+  return num;
+}
+
 export function parseMhtmlFromMorganStanley(fileContent: string, filename: string): MhtmlData {
   const boundaryMatch = fileContent.match(/boundary="([^"]+)"/);
   if (!boundaryMatch) {
@@ -165,7 +177,7 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
             typeOfMoney: typeOfMoney,
             costBasisPerShareUsd: parseCurrencyUsd(costBasisText, filename),
             marketValuePerShareUsd: parseCurrencyUsd(marketValueText, filename),
-            shares: parseFloat(sharesText),
+            shares: parseSharesValue(sharesText, filename),
             gainOrLossUsd: parseCurrencyUsd(gainLossText, filename)
           });
         }

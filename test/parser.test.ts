@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseMhtmlFromMorganStanley } from '../src/parser';
+import { parseMhtmlFromMorganStanley, parseSharesValue } from '../src/parser';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -73,5 +73,17 @@ describe('Data Extraction Logic', () => {
       shares: 2,
       gainOrLossUsd: -10
     });
+  });
+});
+
+describe('parseSharesValue', () => {
+  it('should throw error for non-numeric shares value', () => {
+    expect(() => parseSharesValue('abc', 'test.mhtml')).toThrow(/Invalid shares value \(non-numeric\): abc/);
+    expect(() => parseSharesValue('', 'test.mhtml')).toThrow(/Invalid shares value \(non-numeric\)/);
+  });
+
+  it('should throw error for zero or negative shares value', () => {
+    expect(() => parseSharesValue('0', 'test.mhtml')).toThrow(/Invalid shares value \(must be positive\): 0/);
+    expect(() => parseSharesValue('-5', 'test.mhtml')).toThrow(/Invalid shares value \(must be positive\): -5/);
   });
 });

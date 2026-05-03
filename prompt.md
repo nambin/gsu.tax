@@ -42,12 +42,12 @@
 * c) “Exchange Rate on Transfer Date” - USD to Won exchange rate on Disbursement date.
 * d) “Transfer Price (USD)” - Market value per share in USD.
 * e) “Transfer Price (Won)” (Korean: 주당양도가액) - Market value per share in Won. Multiplication of columns c and d. Round down to the integer.
-* f) “Transfer Price Total (Won)” (Korean: 양도가액) - Market value in Won. Multiplication of columns a and e. Round down to the integer.
+* f) “Transfer Price Total (Won)” (Korean: 양도가액) - Market value in Won. Multiplication of columns a,c, and d. Round down to the integer.
 * g) “Acquisition Date” (Korean: 취득일자) - Acquisition Date.
 * h) “Exchange Rate on Acquisition Date” - USD to Won exchange rate on Acquisition Date.
 * i) “Acquisition Price (USD)” - Cost basis per share in USD.
 * j) “Acquisition Price (Won)” (Korean: 주당취득가액) - Cost basis per share in Won. Multiplication of columns h and i. Round down to the integer.
-* k) “Acquisition Price Total (Won)” (Korean: 취득가액) - Cost basis in Won. Multiplication of columns a and j. Round down to the integer.
+* k) “Acquisition Price Total (Won)” (Korean: 취득가액) - Cost basis in Won. Multiplication of columns a, h, and i. Round down to the integer.
 * l) “Gain/Loss (Won)” - Column f minus Column k.
 
 **6. Unit Tests:**
