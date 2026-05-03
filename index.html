@@ -146,6 +146,26 @@
       border-color: #d0a8ff;
     }
 
+    .footer {
+      margin-top: 60px;
+      padding: 30px 20px;
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 13px;
+      border-top: 1px solid var(--border-color);
+      line-height: 1.6;
+    }
+
+    .disclaimer-box {
+      background-color: rgba(207, 102, 121, 0.1);
+      border: 1px solid var(--error-color);
+      border-radius: 4px;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--error-color);
+    }
+
     .drop-zone * {
       pointer-events: none;
     }
@@ -157,6 +177,11 @@
     <h1>GSU Tax Calculator</h1>
   </header>
   <div class="container">
+    <div class="disclaimer-box">
+      <strong>Important:</strong> Final responsibility for tax filing and data validity rests with the user. This tool
+      is for assistance only.
+    </div>
+
     <div id="drop-zone" class="drop-zone">
       <p>Drag & Drop Morgan Stanley MHTML files here<br>or click to select (Max 150 files)</p>
       <input type="file" id="file-input" multiple accept=".mhtml" />
@@ -170,6 +195,12 @@
       <button id="download-full-btn" disabled>Download Full Verification (CSV)</button>
       <button id="download-tax-btn" class="primary-btn" disabled>Download Tax Filing (CSV)</button>
     </div>
+
+    <footer class="footer">
+      <p>© 2026 GSU Tax Calculator. All calculations should be verified against official Morgan Stanley records.</p>
+      <p>This tool is an open-source helper. Users are solely responsible for the accuracy of their tax returns and
+        compliance with local tax laws.</p>
+    </footer>
   </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
