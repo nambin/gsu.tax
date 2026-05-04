@@ -37,6 +37,14 @@ export function generateTaxCsv(data: ProcessedTransaction[]): string {
     '주당취득가액': t.j_acquisitionPriceWon,
     '취득가액': t.k_acquisitionPriceTotalWon,
     '필요경비': 0,
+    '비과세 양도소득금액': '',
+    '감면종류': '',
+    '감면율': '',
+    '감면소득금액': '',
+    '과세이연여부': '',
+    '국제증권식별번호 (ISIN코드, 종목코드)': 'US02079K1079',
+    '국외자산국가코드': 'US',
+    '국외자산내용': '',
   }));
 
   return Papa.unparse(csvData);
