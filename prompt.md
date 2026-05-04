@@ -45,7 +45,7 @@
 | 세율구분 | Fixed: `61` |
 | 주식등 종류 | Fixed: `61` |
 | 양도물건 종류 | Fixed: `10` |
-| 취득유형 | Fixed: `01` |
+| 취득유형 | Fixed: `09` |
 | 양도일자 | Column b (transfer date) |
 | 주당양도가액 | Column e (transfer price per share in Won) |
 | 양도가액 | Column f (total transfer price in Won) |
