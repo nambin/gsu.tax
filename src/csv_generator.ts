@@ -29,7 +29,7 @@ export function generateTaxCsv(data: ProcessedTransaction[]): string {
     '세율구분': 61,
     '주식등 종류': 61,
     '양도물건 종류': 10,
-    '취득유형': '="01"',
+    '취득유형': '="09"',
     '양도일자': t.b_transferDate,
     '주당양도가액': t.e_transferPriceWon,
     '양도가액': t.f_transferPriceTotalWon,
