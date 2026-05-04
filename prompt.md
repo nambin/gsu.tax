@@ -34,7 +34,25 @@
 **5. Output Specifications:** Allow users to download two CSV files formatted for Korean tax filing references. Please use the YYYY-MM-DD format for all dates. Rows should be ordered by column b, g, a (all ascending orders) listed below.
 
 * **File 1 (Full Verification):** Includes comprehensive data for manual verification.
-* **File 2 (Korean Tax Filing):** A subset of File 1 with the same number of rows. Only include columns that have Korean names listed below.
+* **File 2 (Korean Tax Filing):** 15 columns formatted for Korean tax filing, in the following order:
+
+| Column (Korean) | Source / Default |
+|---|---|
+| 주식 종목명 | Fixed: `알파벳 Class C` |
+| 사업자등록번호 | Fixed: *(empty)* |
+| 국내/국외 구분 | Fixed: `2` |
+| 취득유형별 양도주식 수 | Column a (number of shares) |
+| 세율구분 | Fixed: `61` |
+| 주식등 종류 | Fixed: `61` |
+| 양도물건 종류 | Fixed: `10` |
+| 취득유형 | Fixed: `01` |
+| 양도일자 | Column b (transfer date) |
+| 주당양도가액 | Column e (transfer price per share in Won) |
+| 양도가액 | Column f (total transfer price in Won) |
+| 취득일자 | Column g (acquisition date) |
+| 주당취득가액 | Column j (acquisition price per share in Won) |
+| 취득가액 | Column k (total acquisition price in Won) |
+| 필요경비 | Fixed: `0` |
 
 **Columns list and logic:**
 * a) “Number of Stocks” (Korean: 취득유형별 양도주식 수) - The number of shares (stocks) of each transaction.
