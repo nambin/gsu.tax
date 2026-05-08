@@ -69,3 +69,16 @@ describe('E2E: test-ms-four-records', () => {
     checkOrWrite(path.join(FIXTURES_DIR, 'test-ms-four-records-tax.csv'), taxCsv);
   });
 });
+
+describe('E2E: test-ms-four-records-kr (Korean MHTML)', () => {
+  // Same data as the English fixture — outputs must match the same golden CSVs.
+  it('produces the same full verification CSV', () => {
+    const { fullCsv } = runPipeline('test-ms-four-records-kr');
+    checkOrWrite(path.join(FIXTURES_DIR, 'test-ms-four-records-full.csv'), fullCsv);
+  });
+
+  it('produces the same Korean tax filing CSV', () => {
+    const { taxCsv } = runPipeline('test-ms-four-records-kr');
+    checkOrWrite(path.join(FIXTURES_DIR, 'test-ms-four-records-tax.csv'), taxCsv);
+  });
+});

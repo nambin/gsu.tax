@@ -2,9 +2,13 @@ import quotedPrintable from 'quoted-printable';
 import utf8 from 'utf8';
 import { MhtmlData, Transaction } from './types';
 
-// Helper to format date strings like "August 22, 2024" to "YYYY-MM-DD"
-function formatDate(dateStr: string, filename: string): string {
-  const d = new Date(dateStr);
+// Helper to format date strings like "August 22, 2024" or "2024년 8월 22일" to "YYYY-MM-DD"
+export function formatDate(dateStr: string, filename: string): string {
+  // Korean MS reports use "YYYY년 M월 D일"; the JS Date constructor cannot parse this.
+  const krMatch = dateStr.match(/^\s*(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*$/);
+  const d = krMatch
+    ? new Date(parseInt(krMatch[1]), parseInt(krMatch[2]) - 1, parseInt(krMatch[3]))
+    : new Date(dateStr);
   if (isNaN(d.getTime())) {
     throw new Error(`[${filename}] Invalid date format: ${dateStr}`);
   }
@@ -17,9 +21,10 @@ function formatDate(dateStr: string, filename: string): string {
   return `${year}-${month}-${day}`;
 }
 
-// Helper to parse currency strings like "$167.77" or "−$508.33"
-function parseCurrencyUsd(val: string, filename: string): number {
-  let s = val.replace(/[$,]/g, '').trim();
+// Helper to parse currency strings like "$167.77", "−$508.33", or "US$167.77"
+export function parseCurrencyUsd(val: string, filename: string): number {
+  // Strip currency markers: "US$" (Korean MS reports), "$", and thousands separators.
+  let s = val.replace(/US\$/g, '').replace(/[$,]/g, '').trim();
   // Handle minus sign (can be true minus \u2212 or hyphen)
   if (s.startsWith('−') || s.startsWith('-')) {
     s = '-' + s.substring(1);
@@ -90,13 +95,15 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
   const titles = doc.querySelectorAll('div[aria-label="title"]');
   for (let i = 0; i < titles.length; i++) {
     const titleText = titles[i].textContent || '';
-    if (titleText.includes('Disbursement date')) {
+    const isDisbursement = titleText.includes('Disbursement date') || titleText.includes('지출 날짜');
+    const isSettlement = titleText.includes('Settlement date') || titleText.includes('합의 날짜');
+    if (isDisbursement) {
       const parent = titles[i].parentElement;
       const contentDiv = parent?.querySelector('div[aria-label="content"]');
       if (contentDiv && contentDiv.textContent) {
         disbursementDateRaw = contentDiv.textContent.trim();
       }
-    } else if (titleText.includes('Settlement date')) {
+    } else if (isSettlement) {
       const parent = titles[i].parentElement;
       const contentDiv = parent?.querySelector('div[aria-label="content"]');
       if (contentDiv && contentDiv.textContent) {
@@ -123,14 +130,17 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent?.trim() || '');
 
     // Map column header text to its index (partial match) so the parser
-    // does not depend on the column order in the MS report.
-    const findIdx = (needle: string) => headers.findIndex(h => h.includes(needle));
-    const idxAcq = findIdx('Acquisition date');
-    const idxCost = findIdx('Cost basis per share');
-    const idxMarket = findIdx('Market value per share');
-    const idxShares = findIdx('Shares');
-    const idxGainLoss = findIdx('Gain or loss');
-    const idxType = findIdx('Type of money'); // optional; usually empty in the report
+    // does not depend on the column order in the MS report. Each column
+    // accepts an English or Korean label.
+    const findHeader = (en: string, kr: string) =>
+      headers.findIndex(h => h.includes(en) || h.includes(kr));
+    const idxAcq = findHeader('Acquisition date', '획득 날짜');
+    const idxCost = findHeader('Cost basis per share', '주당 비용 기준');
+    const idxMarket = findHeader('Market value per share', '주당 시가');
+    const idxGainLoss = findHeader('Gain or loss', '이익 또는 손실');
+    const idxType = findHeader('Type of money', '자금 유형'); // optional; usually empty
+    // Korean "주" alone is too generic (it appears in 주당, 주식 etc.) — require an exact-trimmed match.
+    const idxShares = headers.findIndex(h => h.includes('Shares') || h.trim() === '주');
 
     if (idxAcq < 0 || idxCost < 0 || idxMarket < 0 || idxShares < 0 || idxGainLoss < 0) {
       return;
@@ -148,14 +158,17 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
       const cells = Array.from(row.querySelectorAll('td'));
       if (cells.length < minCells) return;
 
-      // The actual values are usually deep inside the td's div/span structure
+      // The actual values are usually deep inside the td's div/span structure.
+      // Strip aria-hidden mobile-header divs (e.g. "Acquisition date" / "획득 날짜")
+      // before reading text, so empty cells return "" in any language.
       const getCellText = (cell: Element) => {
-        // To avoid getting the mobile headers (aria-hidden divs), we try to get the last text node or span
-        const spans = cell.querySelectorAll('span');
+        const clone = cell.cloneNode(true) as Element;
+        clone.querySelectorAll('[aria-hidden="true"]').forEach(el => el.remove());
+        const spans = clone.querySelectorAll('span');
         if (spans.length > 0) {
           return spans[spans.length - 1].textContent?.trim() || '';
         }
-        return cell.textContent?.trim() || '';
+        return clone.textContent?.trim() || '';
       };
 
       const acqDateText = getCellText(cells[idxAcq]).replace(/Acquisition date/i, '').trim();
