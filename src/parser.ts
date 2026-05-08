@@ -121,68 +121,70 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
 
   tables.forEach(table => {
     const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent?.trim() || '');
-    // Check if this table has our columns (case-insensitive, partial match)
-    const hasAcq = headers.some(h => h.includes('Acquisition date'));
-    const hasCost = headers.some(h => h.includes('Cost basis per share'));
-    const hasMarket = headers.some(h => h.includes('Market value per share'));
-    const hasShares = headers.some(h => h.includes('Shares'));
-    const hasGainLoss = headers.some(h => h.includes('Gain or loss'));
 
-    if (hasAcq && hasCost && hasMarket && hasShares && hasGainLoss) {
-      tableFound = true;
+    // Map column header text to its index (partial match) so the parser
+    // does not depend on the column order in the MS report.
+    const findIdx = (needle: string) => headers.findIndex(h => h.includes(needle));
+    const idxAcq = findIdx('Acquisition date');
+    const idxCost = findIdx('Cost basis per share');
+    const idxMarket = findIdx('Market value per share');
+    const idxShares = findIdx('Shares');
+    const idxGainLoss = findIdx('Gain or loss');
+    const idxType = findIdx('Type of money'); // optional; usually empty in the report
 
-      const tbody = table.querySelector('tbody');
-      if (!tbody) return;
-
-      const rows = tbody.querySelectorAll('tr');
-      rows.forEach(row => {
-        const cells = Array.from(row.querySelectorAll('td'));
-        if (cells.length >= 6) { // Expecting at least 6 columns
-          // We assume the order based on the prompt's analysis:
-          // 0: Acquisition date
-          // 1: Type of money
-          // 2: Cost basis per share
-          // 3: Market value per share
-          // 4: Shares
-          // 5: Gain or loss
-
-          // The actual values are usually deep inside the td's div/span structure
-          const getCellText = (cell: Element) => {
-            // To avoid getting the mobile headers (aria-hidden divs), we try to get the last text node or span
-            const spans = cell.querySelectorAll('span');
-            if (spans.length > 0) {
-              return spans[spans.length - 1].textContent?.trim() || '';
-            }
-            return cell.textContent?.trim() || '';
-          };
-
-          const acqDateText = getCellText(cells[0]).replace(/Acquisition date/i, '').trim();
-          const typeOfMoney = getCellText(cells[1]).replace(/Type of money/i, '').trim();
-          // Remove "Cost basis per share" header and tax status labels like "non-covered" or "covered"
-          const costBasisText = getCellText(cells[2])
-            .replace(/Cost basis per share/i, '')
-            .replace(/non-covered/i, '')
-            .replace(/covered/i, '')
-            .trim();
-          const marketValueText = getCellText(cells[3]).replace(/Market value per share/i, '').trim();
-          const sharesText = getCellText(cells[4]).replace(/Shares/i, '').trim();
-          const gainLossText = getCellText(cells[5]).replace(/Gain or loss/i, '').trim();
-
-          if (!acqDateText || !costBasisText || !marketValueText || !sharesText || !gainLossText) {
-            throw new Error(`[${filename}] Empty required value in table row`);
-          }
-
-          transactions.push({
-            acquisitionDate: formatDate(acqDateText, filename),
-            typeOfMoney: typeOfMoney,
-            costBasisPerShareUsd: parseCurrencyUsd(costBasisText, filename),
-            marketValuePerShareUsd: parseCurrencyUsd(marketValueText, filename),
-            shares: parseSharesValue(sharesText, filename),
-            gainOrLossUsd: parseCurrencyUsd(gainLossText, filename)
-          });
-        }
-      });
+    if (idxAcq < 0 || idxCost < 0 || idxMarket < 0 || idxShares < 0 || idxGainLoss < 0) {
+      return;
     }
+
+    tableFound = true;
+
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+
+    const minCells = Math.max(idxAcq, idxCost, idxMarket, idxShares, idxGainLoss, idxType) + 1;
+
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      if (cells.length < minCells) return;
+
+      // The actual values are usually deep inside the td's div/span structure
+      const getCellText = (cell: Element) => {
+        // To avoid getting the mobile headers (aria-hidden divs), we try to get the last text node or span
+        const spans = cell.querySelectorAll('span');
+        if (spans.length > 0) {
+          return spans[spans.length - 1].textContent?.trim() || '';
+        }
+        return cell.textContent?.trim() || '';
+      };
+
+      const acqDateText = getCellText(cells[idxAcq]).replace(/Acquisition date/i, '').trim();
+      const typeOfMoney = idxType >= 0
+        ? getCellText(cells[idxType]).replace(/Type of money/i, '').trim()
+        : '';
+      // Remove "Cost basis per share" header and tax status labels like "non-covered" or "covered"
+      const costBasisText = getCellText(cells[idxCost])
+        .replace(/Cost basis per share/i, '')
+        .replace(/non-covered/i, '')
+        .replace(/covered/i, '')
+        .trim();
+      const marketValueText = getCellText(cells[idxMarket]).replace(/Market value per share/i, '').trim();
+      const sharesText = getCellText(cells[idxShares]).replace(/Shares/i, '').trim();
+      const gainLossText = getCellText(cells[idxGainLoss]).replace(/Gain or loss/i, '').trim();
+
+      if (!acqDateText || !costBasisText || !marketValueText || !sharesText || !gainLossText) {
+        throw new Error(`[${filename}] Empty required value in table row`);
+      }
+
+      transactions.push({
+        acquisitionDate: formatDate(acqDateText, filename),
+        typeOfMoney: typeOfMoney,
+        costBasisPerShareUsd: parseCurrencyUsd(costBasisText, filename),
+        marketValuePerShareUsd: parseCurrencyUsd(marketValueText, filename),
+        shares: parseSharesValue(sharesText, filename),
+        gainOrLossUsd: parseCurrencyUsd(gainLossText, filename)
+      });
+    });
   });
 
   if (!tableFound || transactions.length === 0) {
