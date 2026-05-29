@@ -1,6 +1,6 @@
 # GSU Tax Calculator
 
-A zero-dependency, browser-based tool for processing Morgan Stanley MHTML reports to simplify tax filing for Alphabet GSU (Global Stock Units). This is written for Google employees in South Korea.
+A zero-dependency, browser-based tool for processing Morgan Stanley MHTML reports to simplify tax filing for Alphabet GSU (Global Stock Units). This is written for Google employees in South Korea ([Instruction](https://docs.google.com/document/d/15s4FxYdZnGF_i95KQMhNMb9St7DTyb5xRHYER74FXzE)).
 
 ## Overview
 
