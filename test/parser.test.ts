@@ -3,12 +3,15 @@ import { parseMhtmlFromMorganStanley, parseSharesValue, formatDate, parseCurrenc
 import * as fs from 'fs';
 import * as path from 'path';
 
+// Latest date in the bundled exchange rate CSV; the parser rejects dates after it.
+const MAX_DATE = '2026-07-31';
+
 describe('Data Extraction Logic', () => {
   it('should correctly parse test-ms-one-record.mhtml', () => {
     const filePath = path.join(__dirname, 'fixtures', 'test-ms-one-record.mhtml');
     const content = fs.readFileSync(filePath, 'utf-8');
 
-    const result = parseMhtmlFromMorganStanley(content, 'test-ms-one-record.mhtml');
+    const result = parseMhtmlFromMorganStanley(content, 'test-ms-one-record.mhtml', MAX_DATE);
 
     expect(result.filename).toBe('test-ms-one-record.mhtml');
     expect(result.disbursementDate).toBe('2024-08-22');
@@ -30,7 +33,7 @@ describe('Data Extraction Logic', () => {
     const filePath = path.join(__dirname, 'fixtures', 'test-ms-four-records.mhtml');
     const content = fs.readFileSync(filePath, 'utf-8');
 
-    const result = parseMhtmlFromMorganStanley(content, 'test-ms-four-records.mhtml');
+    const result = parseMhtmlFromMorganStanley(content, 'test-ms-four-records.mhtml', MAX_DATE);
 
     expect(result.filename).toBe('test-ms-four-records.mhtml');
     expect(result.disbursementDate).toBe('2024-09-23');
@@ -81,7 +84,7 @@ describe('Data Extraction Logic', () => {
     const filePath = path.join(__dirname, 'fixtures', 'test-ms-four-records-kr.mhtml');
     const content = fs.readFileSync(filePath, 'utf-8');
 
-    const result = parseMhtmlFromMorganStanley(content, 'test-ms-four-records-kr.mhtml');
+    const result = parseMhtmlFromMorganStanley(content, 'test-ms-four-records-kr.mhtml', MAX_DATE);
 
     expect(result.filename).toBe('test-ms-four-records-kr.mhtml');
     expect(result.disbursementDate).toBe('2024-09-23');
@@ -129,41 +132,46 @@ describe('Data Extraction Logic', () => {
 
 describe('formatDate Korean parsing', () => {
   it('parses standard "YYYY년 M월 D일"', () => {
-    expect(formatDate('2024년 8월 22일', 'test.mhtml')).toBe('2024-08-22');
+    expect(formatDate('2024년 8월 22일', 'test.mhtml', MAX_DATE)).toBe('2024-08-22');
   });
 
   it('zero-pads single-digit month and day', () => {
-    expect(formatDate('2024년 5월 25일', 'test.mhtml')).toBe('2024-05-25');
-    expect(formatDate('2024년 12월 5일', 'test.mhtml')).toBe('2024-12-05');
-    expect(formatDate('2024년 1월 1일', 'test.mhtml')).toBe('2024-01-01');
+    expect(formatDate('2024년 5월 25일', 'test.mhtml', MAX_DATE)).toBe('2024-05-25');
+    expect(formatDate('2024년 12월 5일', 'test.mhtml', MAX_DATE)).toBe('2024-12-05');
+    expect(formatDate('2024년 1월 1일', 'test.mhtml', MAX_DATE)).toBe('2024-01-01');
   });
 
   it('handles two-digit month and day', () => {
-    expect(formatDate('2024년 11월 30일', 'test.mhtml')).toBe('2024-11-30');
-    expect(formatDate('2024년 12월 31일', 'test.mhtml')).toBe('2024-12-31');
+    expect(formatDate('2024년 11월 30일', 'test.mhtml', MAX_DATE)).toBe('2024-11-30');
+    expect(formatDate('2024년 12월 31일', 'test.mhtml', MAX_DATE)).toBe('2024-12-31');
   });
 
   it('tolerates extra whitespace between fields', () => {
-    expect(formatDate('  2024년   8월   22일  ', 'test.mhtml')).toBe('2024-08-22');
+    expect(formatDate('  2024년   8월   22일  ', 'test.mhtml', MAX_DATE)).toBe('2024-08-22');
   });
 
-  it('accepts year boundaries within the allowed range', () => {
-    expect(formatDate('2006년 1월 1일', 'test.mhtml')).toBe('2006-01-01');
-    expect(formatDate('2025년 12월 31일', 'test.mhtml')).toBe('2025-12-31');
+  it('accepts the boundary dates of the allowed range', () => {
+    expect(formatDate('2006년 1월 1일', 'test.mhtml', MAX_DATE)).toBe('2006-01-01');
+    expect(formatDate('2026년 7월 31일', 'test.mhtml', MAX_DATE)).toBe('2026-07-31');
   });
 
-  it('throws when year is out of the allowed range', () => {
-    expect(() => formatDate('2005년 12월 31일', 'test.mhtml')).toThrow(/Date out of allowed range/);
-    expect(() => formatDate('2026년 1월 1일', 'test.mhtml')).toThrow(/Date out of allowed range/);
+  it('throws when the date is before 2006 or after the end date', () => {
+    expect(() => formatDate('2005년 12월 31일', 'test.mhtml', MAX_DATE)).toThrow(/Date out of allowed range/);
+    expect(() => formatDate('2026년 8월 1일', 'test.mhtml', MAX_DATE)).toThrow(/Date out of allowed range/);
+  });
+
+  it('takes the end date from the argument', () => {
+    expect(formatDate('2024년 12월 31일', 'test.mhtml', '2024-12-31')).toBe('2024-12-31');
+    expect(() => formatDate('2025년 1월 1일', 'test.mhtml', '2024-12-31')).toThrow(/Date out of allowed range/);
   });
 
   it('throws when the Korean date is malformed', () => {
     // Missing 일 — regex falls through to new Date(), which cannot parse this either.
-    expect(() => formatDate('2024년 8월 22', 'test.mhtml')).toThrow(/Invalid date format/);
+    expect(() => formatDate('2024년 8월 22', 'test.mhtml', MAX_DATE)).toThrow(/Invalid date format/);
   });
 
   it('still parses English dates (regression guard)', () => {
-    expect(formatDate('August 22, 2024', 'test.mhtml')).toBe('2024-08-22');
+    expect(formatDate('August 22, 2024', 'test.mhtml', MAX_DATE)).toBe('2024-08-22');
   });
 });
 
@@ -213,5 +221,15 @@ describe('parseSharesValue', () => {
   it('should throw error for zero or negative shares value', () => {
     expect(() => parseSharesValue('0', 'test.mhtml')).toThrow(/Invalid shares value \(must be positive\): 0/);
     expect(() => parseSharesValue('-5', 'test.mhtml')).toThrow(/Invalid shares value \(must be positive\): -5/);
+  });
+});
+
+describe('parseMhtmlFromMorganStanley end date', () => {
+  it('rejects a report whose disbursement date is after the end date', () => {
+    const filePath = path.join(__dirname, 'fixtures', 'test-ms-one-record.mhtml');
+    const content = fs.readFileSync(filePath, 'utf-8');
+    // The fixture's disbursement date is 2024-08-22.
+    expect(() => parseMhtmlFromMorganStanley(content, 'test-ms-one-record.mhtml', '2024-08-21'))
+      .toThrow(/Date out of allowed range/);
   });
 });

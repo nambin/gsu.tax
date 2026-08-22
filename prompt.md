@@ -77,7 +77,7 @@
 
 * The goal is to provide trustworthy data, so stop processing immediately for any error (e.g., MHTML parsing error, malformed data).
 * Do not allow outputting partial records. Users can download the output CSV files only when there is no detected error.
-* *Date Rule:* This program only allows dates between 2006 and 2025. If any date is outside this range (e.g., 2005-12-31 or 2026-01-01), it is considered an error.
+* *Date Rule:* This program only allows dates from 2006 up to the latest date in the bundled exchange rate CSV (`src/won_dollar_exchange_rate.csv`), which is determined once at startup. If any date is outside this range (e.g., 2005-12-31 or any date after the latest exchange rate), it is considered an error.
 
 **8. Logging:** Display the processing status clearly to users without exposing sensitive information (especially prices). The TypeScript library is responsible for displaying proper logging to users.
 

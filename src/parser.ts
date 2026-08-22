@@ -2,8 +2,9 @@ import quotedPrintable from 'quoted-printable';
 import utf8 from 'utf8';
 import { MhtmlData, Transaction } from './types';
 
-// Helper to format date strings like "August 22, 2024" or "2024년 8월 22일" to "YYYY-MM-DD"
-export function formatDate(dateStr: string, filename: string): string {
+// Helper to format date strings like "August 22, 2024" or "2024년 8월 22일" to "YYYY-MM-DD".
+// Dates before 2006 or after maxDate (the latest date in the exchange rate CSV) are rejected.
+export function formatDate(dateStr: string, filename: string, maxDate: string): string {
   // Korean MS reports use "YYYY년 M월 D일"; the JS Date constructor cannot parse this.
   const krMatch = dateStr.match(/^\s*(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*$/);
   const d = krMatch
@@ -13,12 +14,13 @@ export function formatDate(dateStr: string, filename: string): string {
     throw new Error(`[${filename}] Invalid date format: ${dateStr}`);
   }
   const year = d.getFullYear();
-  if (year < 2006 || year > 2025) {
-    throw new Error(`[${filename}] Date out of allowed range (2006-2025): ${dateStr}`);
-  }
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const formatted = `${year}-${month}-${day}`;
+  if (year < 2006 || formatted > maxDate) {
+    throw new Error(`[${filename}] Date out of allowed range (2006-01-01 to ${maxDate}): ${dateStr}`);
+  }
+  return formatted;
 }
 
 // Helper to parse currency strings like "$167.77", "−$508.33", or "US$167.77"
@@ -48,7 +50,8 @@ export function parseSharesValue(val: string, filename: string): number {
   return num;
 }
 
-export function parseMhtmlFromMorganStanley(fileContent: string, filename: string): MhtmlData {
+// maxDate: the latest date in the exchange rate CSV (YYYY-MM-DD); any report date after it is rejected.
+export function parseMhtmlFromMorganStanley(fileContent: string, filename: string, maxDate: string): MhtmlData {
   const boundaryMatch = fileContent.match(/boundary="([^"]+)"/);
   if (!boundaryMatch) {
     throw new Error(`[${filename}] Could not find multipart boundary in MHTML header`);
@@ -116,8 +119,8 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
     throw new Error(`[${filename}] Could not find Disbursement date or Settlement date`);
   }
 
-  const disbursementDate = disbursementDateRaw ? formatDate(disbursementDateRaw, filename) : '';
-  const settlementDate = settlementDateRaw ? formatDate(settlementDateRaw, filename) : '';
+  const disbursementDate = disbursementDateRaw ? formatDate(disbursementDateRaw, filename, maxDate) : '';
+  const settlementDate = settlementDateRaw ? formatDate(settlementDateRaw, filename, maxDate) : '';
 
   // Extract Table Transactions
   const transactions: Transaction[] = [];
@@ -190,7 +193,7 @@ export function parseMhtmlFromMorganStanley(fileContent: string, filename: strin
       }
 
       transactions.push({
-        acquisitionDate: formatDate(acqDateText, filename),
+        acquisitionDate: formatDate(acqDateText, filename, maxDate),
         typeOfMoney: typeOfMoney,
         costBasisPerShareUsd: parseCurrencyUsd(costBasisText, filename),
         marketValuePerShareUsd: parseCurrencyUsd(marketValueText, filename),

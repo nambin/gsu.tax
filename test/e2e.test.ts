@@ -28,7 +28,8 @@ function runPipeline(mhtmlBasename: string) {
     path.join(FIXTURES_DIR, `${mhtmlBasename}.mhtml`),
     'utf-8'
   );
-  const parsed = parseMhtmlFromMorganStanley(mhtmlContent, `${mhtmlBasename}.mhtml`);
+  // rates are sorted newest-first, so rates[0].date is the latest date in the CSV.
+  const parsed = parseMhtmlFromMorganStanley(mhtmlContent, `${mhtmlBasename}.mhtml`, rates[0].date);
   const processed = processTransactions([parsed], rates);
 
   return {

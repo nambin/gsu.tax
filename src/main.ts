@@ -5,6 +5,8 @@ import exchangeRateCsvStr from './won_dollar_exchange_rate.csv?raw';
 import { ExchangeRate, MhtmlData, ProcessedTransaction } from './types';
 
 let exchangeRates: ExchangeRate[] = [];
+// Latest date in the exchange rate CSV (YYYY-MM-DD), set in init(). Report dates after it are rejected.
+let latestExchangeRateDate = '';
 let parsedMhtmlList: MhtmlData[] = [];
 let finalTransactions: ProcessedTransaction[] = [];
 
@@ -56,8 +58,8 @@ async function init() {
     logMessage('Loading exchange rates...', 'info');
     exchangeRates = parseExchangeRates(exchangeRateCsvStr);
     const earliest = exchangeRates[exchangeRates.length - 1].date;
-    const latest = exchangeRates[0].date;
-    logMessage(`Loaded ${exchangeRates.length} exchange rate records (${earliest} to ${latest}).`, 'success');
+    latestExchangeRateDate = exchangeRates[0].date;
+    logMessage(`Loaded ${exchangeRates.length} exchange rate records (${earliest} to ${latestExchangeRateDate}).`, 'success');
   } catch (err: any) {
     logMessage(`Failed to load exchange rates: ${err.message}`, 'error');
     logMessage('The application cannot function. Please reload the page.', 'error');
@@ -96,7 +98,7 @@ async function handleFiles(files: FileList | null) {
     const file = files[i];
     try {
       const content = await file.text();
-      const parsed = parseMhtmlFromMorganStanley(content, file.name);
+      const parsed = parseMhtmlFromMorganStanley(content, file.name, latestExchangeRateDate);
       parsedMhtmlList.push(parsed);
       logMessage(`[${file.name}] - ${parsed.transactions.length} transactions found`, 'success');
     } catch (err: any) {
